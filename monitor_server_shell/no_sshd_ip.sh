@@ -33,7 +33,7 @@ awk '{if ($1 > 5) print $2}'  $FAILED_LOGIN_IP > $NO_SSHD_IP
 cat $SECURE_LOG |grep Accepted >> $SUCCESSFUL_LOGIN_IP
 echo $TIME >> $SUCCESSFUL_LOGIN_IP
 cat /dev/null > $SECURE_LOG
-cat $SUCCESSFUL_LOGIN_IP|grep ssh2|grep  -v 192.168|grep -v  116.255.235.13|grep -v 114.215.208.118|grep -v 1.192.156.65|grep -v 125.40|grep 127.0.0.1 |grep ::1  > /data/sh/unknow_ip.txt
+cat $SUCCESSFUL_LOGIN_IP|grep ssh2|grep  -v 192.168|grep 127.0.0.1 |grep ::1  > /data/sh/unknow_ip.txt
 cat /data/sh/successful_login_ip.txt  >> /data/sh/successful_login_ip.txt.bak
 cat /dev/null > /data/sh/successful_login_ip.txt
 UNKNOW_IP=`cat /data/sh/unknow_ip.txt`
@@ -41,7 +41,6 @@ SIZE=`du -sk /data/sh/unknow_ip.txt|awk '{print $1}'`
 printf $SIZE
 if [  $SIZE  != "0"  ];then
 	/etc/init.d/postfix	restart
-	#echo "cat $UNKNOW_IP" | mail -s "Danger,UNKNOW_IP was found!" 13700860182@139.com,13700860182@163.com
 	echo "cat $UNKNOW_IP" | mail -s "Danger,UNKNOW_IP was found! zsh-web-1" hz7726@163.com
 sleep 30s
 	/etc/init.d/postfix stop
