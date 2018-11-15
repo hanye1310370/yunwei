@@ -7,7 +7,7 @@
 #Date:		    2017/04/05
 #Author:	    hanye	
 #Email:		    hz7726@163.com
-#Website:	    www.1fangxin4.cn
+#Website:	    www.hz726.cn
 #Description:	Check whether the site is rootkit infection
 #Notes:
 #crontab:     */5 * * * *  chkrootkit_everyday.sh
