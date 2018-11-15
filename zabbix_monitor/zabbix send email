@@ -1,0 +1,96 @@
+Zabbix3.0.4定义邮件发送报警和声音提示
+1.下载软件
+wget http://caspian.dotconf.net/menu/Software/SendEmail/sendEmail-v1.56.tar.gz
+2.创建目录
+mkdir /usr/local/bin
+3.解压软件
+tar zxf sendEmail-v1.56.tar.gz -C /usr/src
+4.进入目录
+cd /usr/src/sendEmail-v1.56
+5.复制文件，并设置权限
+cp -a sendEmail /usr/local/bin
+chmod +x /usr/local/bin/sendEmail
+6.安装组件
+yum install perl-Net-SSLeay perl-IO-Socket-SSL -y
+7.测试邮件功能
+# /usr/local/bin/sendEmail -f From@163.com -t to@qq.com -s smtp.163.com -u "我是邮件主题" -o message-content-type=html -o message-charset=utf8 -xu From@163.com -xp password -m "我是邮件内容"
+命令说明：
+/usr/local/bin/sendEmail        命令主程序
+-f from@163.com                 发件人邮箱
+-t to@163.com                   收件人邮箱
+-s smtp.163.com                 发件人邮箱的smtp服务器
+-u "我是邮件主题"                邮件的标题
+-o message-content-type=html    邮件内容的格式,html表示它是html格式
+-o message-charset=utf8         邮件内容编码
+-xu from@163.com                发件人邮箱的用户名
+-xp 123456                      发件人邮箱密码
+-m "我是邮件内容"                邮件的具体内容
+-a  path/file                   我是要发送的文件
+例子：sendEmail  -f hz7726@163.com -t hz7726@163.com -s smtp.163.com -u "aaaaa" -o message-content-type=html -o messages-character=utf8 -xu hz7726@163.com -xp hz7726 -m "a"
+ 
+8.查看编辑脚本配置
+进入zabbix自定义的指定目录，我这里是/usr/local/zabbix 
+可以查看zabbix_server.conf配置文件AlertScriptsPath变量是如何定义的。
+vim /usr/local/zabbix/etc/zabbix_server.conf
+找到AlertScriptsPath选项，可以自定义位置
+### Option: AlertScriptsPath
+#       Full path to location of custom alert scripts.
+#       Default depends on compilation options.
+#
+# Mandatory: no
+# Default:
+# AlertScriptsPath=${datadir}/zabbix/alertscripts
+AlertScriptsPath=/usr/local/zabbix/alertscripts
+cd /usr/local/zabbix/alertscripts/ 
+9.编辑脚本
+vim sendEmail.sh
+内容如下:
+#!/bin/bash
+to=$1
+subject=$2
+body=$3
+/usr/local/bin/sendEmail  -f from@163.com -t "$to" -s smtp.163.com -u "$subject" -o message-content-type=html -o message-charset=utf8 -xu from@163.com -xp password -m "$body"
+说明: 
+from@163.com 替换成自己的发件邮箱 
+smtp.163.com 表示邮箱的smtp服务器，这里展示使用的是163邮箱，替换自己的邮箱SMTP地址 
+password 替换成发件邮箱密码
+10.编辑完成后，给脚本权限
+chmod +x sendEmail.sh
+chown zabbix.zabbix sendEmail.sh
+11.web界面配置
+
+进入zabbix管理页面:
+
+1：点击管理->报警媒介类型 点击最右边的创建媒体类型
+
+
+
+输入脚本名称，类型选择脚本
+
+添加以下3个参数，分别对应sendEmail.sh脚本需要的3个参数：收件人地址、主题、详细内容
+
+{ALERT.SENDTO}
+
+{ALERT.SUBJECT}
+
+{ALERT.MESSAGE}
+
+解释:很多人安装zabbix 3.0之后，写的脚本一直发信不成功,手动执行时可以的。
+
+那是因为zabbix3.0之后，可以自定义参数了。所以不写参数，它是不会传参数的。
+
+在2.x版本不存在这个问题，默认会传3个参数。
+
+2：创建用户并加载次脚本的报警媒介
+
+3：配置动作和调用脚本发送邮件到admin（hz7726@163.com）
+
+
+4：设置触发器触发此动作即可发送邮件了
+
+
+
+5:这时候开始开启四以上的链接等待邮件已经发送过来
+
+6：设置报警铃声和恢复铃声
+
