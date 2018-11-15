@@ -247,6 +247,7 @@ $outputfile = abs_path( $opt{outputfile} ) unless $opt{outputfile} eq "0";
 my $fh = undef;
 open( $fh, '>', $outputfile )
   or die("Fail opening $outputfile")
+
   if defined($outputfile);
 $opt{nocolor} = 1 if defined($outputfile);
 
