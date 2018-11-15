@@ -1,0 +1,7 @@
+php——strace
+strace  -c -p $(pgrep -n php-fpm)   找到耗时的
+man $
+strace  -T -e poll -p $(pgrep -n php-fpm)  根据耗时的调用查找文件
+ strace  -T -e sendto  -p $(pgrep -n php-fpm) 找到执行文件
+ strace -o /tmp/output.txt -T -tt -F -e trace=all -p 31920
+ http://www.cnblogs.com/JohnABC/p/5680470.html
