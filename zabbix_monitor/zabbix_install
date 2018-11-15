@@ -1,1 +1,239 @@
-#!/bin/bash
+Centos 6.x安装zabbix 3.0
+
+ 
+
+1、 首先查看系统 jdk 版本;
+
+rpm -qa | grep java
+
+发现有其他版本,卸载了它(以卸载 openjdk-1.6.0 为例)
+
+yum remove java-1.6.0* -y
+
+ 
+
+2、 然后安装 jdk1.7.0
+
+yum install java-1.7.0* -y
+
+ 
+
+安装支持组件
+
+1、 安装第三方插件包
+
+rpm -ivh http://repo.webtatic.com/yum/el6/latest.rpm
+
+ 
+
+2、 依次安装
+
+yum install php-pecl-ssh2.x86_64 libssh2-devel.x86_64 net-snmp* OpenIPMI OpenIPMI-devel -y
+
+yum install rpm-build curl* curl-devel httpd php56w php56w-gd php56w-mysql php56w-bcmath php56w-mbstring php56w-xml php56w-ldap -y
+
+yum install gcc mysql-community-devel libxml2-devel unixODBC-devel net-snmp-devellibcurl-devel libssh2-devel OpenIPMI-devel openssl-devel openldap-devel –y
+
+ 
+
+同时修改/etc/php.ini 文件:
+
+#vim /etc/php.ini
+
+post_max_size=16M
+
+max_execution_time=300
+
+max_input_time=300
+
+date.timezone=Asia/Shanghai
+
+always_populate_raw_post_data=-1
+
+ 
+
+安装配置 Mysql
+
+1、 安装 mysql 得 yum 源
+
+ 
+
+rpm -ivh http://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
+
+ 
+
+2、 检查一下是否有可以更新的版本
+
+yum repolist enabled | grep mysql
+
+ 
+
+3、 安装 Mysql 数据库
+
+yum install mysql-community-server mysql-devel -y
+
+ 
+
+4、 启动 mysql
+
+service mysqld start
+
+ 
+
+5、 创建数据库(zabbix)、用户(zabbix)、密码(zabbix)
+
+create database zabbix character set utf8 collate utf8_bin;
+
+grant all privileges on zabbix.* to zabbix@localhost identified by 'zabbix';
+
+flush privileges;
+
+ 
+
+6、 说明:关于 Mysql 这里不展开说它得各项配置,只保证可用;用户可以根据个人&企业 要求对 Mysql 进行针对性的优化以及配置;
+
+安装配置 Zabbix
+
+1、 下载 Zabbix3.0.4
+
+ 
+
+wget http://jaist.dl.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/3.0.4/zabbix- 3.0.4.tar.gz
+
+tar -zxvf zabbix-3.0.4.tar.gz
+
+ 
+
+3、 进入解压目录中的 database 下的 mysql 目录下,导入初始数据:
+
+cd zabbix-3.0.4/database/mysql/
+
+mysql -uroot -p zabbix < schema.sql
+
+mysql -uroot -p zabbix < images.sql
+
+mysql -uroot -p zabbix < data.sql
+
+ 
+
+4、 导入完毕后,就可以进行安装了,进入安装根目录 zabbix-3.0.4/
+
+cd zabbix-3.0.4
+
+./configure --prefix=/usr/local/zabbix --enable-server --enable-agent --enable-java --enable-proxy -with-mysql --with-net-snmp --with-libcurl --with-libxml2 --with-unixodbc --with-ssh2 --with-openipmi --with-openssl --with-java-gateway
+
+ 编译时提示需要安装的包
+1)configure: error: no acceptable C compiler found in $PATH
+需要安装apt-get -y install gcc
+2)configure: error: MySQL library not found
+需要安装apt-get -y install libghc6-hsql-mysql-dev
+3)configure: error: LIBXML2 library not found
+需要安装apt-get -y install libxml2-dev
+4)configure: error: unixODBC library not found
+需要安装apt-get -y install unixodbc-dev
+5)configure: error: Invalid Net-SNMP directory - unable to find net-snmp-config
+需要安装apt-get -y install libsnmp-dev
+6)configure: error: Invalid OPENIPMI directory - unable to find ipmiif.h
+需要安装apt-get -y install libopenipmi-dev
+7)configure: error: Curl library not found
+需要安装apt-get -y install libghc6-curl-dev
+
+没有报错的话,执行 make install
+
+5、 在/var/www/html/下创建文件夹 zabbix  mkdir /var/www/html/zabbix
+
+6、 拷贝 php 页面文件到/var/www/html/zabbix 目录下并授权
+
+ 
+
+cp -R zabbix-3.0.4/frontends/* /var/www/html/zabbix
+
+chown -R apache:apache /var/www/html/zabbix/
+
+chmod +x /var/www/html/zabbix/conf/
+
+ 
+
+7、 拷贝启动脚本到/etc/init.d
+
+cp zabbix-3.0.4/misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
+
+cp zabbix-3.0.4/misc/init.d/fedora/core/zabbix_server /etc/init.d/
+
+chkconfig --add /etc/init.d/zabbix_server
+
+chkconfig --add /etc/init.d/zabbix_agentd
+
+sed -i  's/BASEDIR=\/usr\/local/BASEDIR=\/usr\/local\/zabbix/' /etc/init.d/zabbix_server
+
+sed -i  's/BASEDIR=\/usr\/local/BASEDIR=\/usr\/local\/zabbix/' /etc/init.d/zabbix_agentd
+
+编辑
+
+ 
+
+vim /usr/local/zabbix/etc/zabbix_server.conf
+
+zabbix_server.conf 配置：
+
+ListenPort=10051
+
+LogFile=/tmp/zabbix_server.log
+
+DBName=zabbix
+
+DBUser=root
+
+DBPassword=zabbix
+
+ListenIP=127.0.0.1
+
+vim /usr/local/zabbix/etc/zabbix_server.conf
+
+zabbix_server.conf 配置：
+
+ListenPort=10051
+
+LogFile=/tmp/zabbix_server.log
+
+DBName=zabbix
+
+DBUser=root
+
+DBPassword=zabbix
+
+ListenIP=127.0.0.1 
+
+8、 配置自启动
+
+chkconfig httpd on
+
+chkconfig mysqld on
+
+chkconfig zabbix_server on
+
+chkconfig zabbix_agentd on
+
+ 
+
+9、 启动服务
+
+service httpd start
+
+service mysqld start
+
+service zabbix_server start
+
+service zabbix_agentd start
+
+ 
+
+10、注意事项:
+
+a) 关闭 selinux;
+
+b) 关闭防火墙,或者开放 80 端口访问;
+
+11、访问监控页面 http://ip-address/zabbix/php  Admin   zabbix
+
+12、开始安装下一步下一步完成。
